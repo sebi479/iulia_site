@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pentru Iulia</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500;1,600&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0f1531;--dusk:#2b1b3f;--gold:#ffd98a;--rose:#f4a6b8;--mist:#ebe6f7;
+--serif:'Cormorant Garamond',Georgia,'Times New Roman',serif;--sans:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0;min-height:100%}
+body{background:linear-gradient(180deg,var(--ink),var(--dusk));color:var(--mist);font-family:var(--sans);font-size:18px;line-height:1.6;min-height:100vh}
+#sky{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+#app{position:relative;z-index:1;max-width:34rem;margin:0 auto;padding:1.5rem 1.5rem 2rem;min-height:100vh;display:flex;flex-direction:column}
+#constellation{width:100%;height:84px;flex:none}
+#constellation line{stroke:var(--gold);stroke-width:1;opacity:.55}
+#constellation circle{fill:var(--gold);opacity:0;transition:opacity .8s,r .8s}
+#constellation circle.on{opacity:1}
+#stage{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1.25rem;opacity:0;transform:translateY(10px);transition:opacity .9s,transform .9s}
+#stage.in{opacity:1;transform:none}
+h1,h2{font-family:var(--serif);font-weight:500;font-style:italic;line-height:1.1;margin:0;color:#fff}
+h1{font-size:clamp(3.2rem,15vw,5rem)}
+h2{font-size:clamp(2rem,8vw,2.8rem)}
+p{margin:0;max-width:30rem}
+.hint{color:var(--rose);font-size:.95rem}
+button{font:inherit;cursor:pointer;border:0;color:inherit;background:none}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+.go{align-self:flex-start;background:var(--gold);color:var(--ink);font-weight:600;padding:.75rem 1.6rem;border-radius:999px;transition:transform .2s,background .2s}
+.go:hover{transform:scale(1.04);background:#fff}
+.go[hidden]{display:none}
+.field{position:relative;width:100%;max-width:22rem;aspect-ratio:1;margin:0 auto;border-radius:1.5rem;background:rgba(255,255,255,.04)}
+.outline{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.outline polygon{fill:none;stroke:var(--rose);stroke-width:.6;stroke-linejoin:round;opacity:0;transition:opacity 1.4s}
+.outline.on polygon{opacity:.75}
+.star{position:absolute;width:3rem;height:3rem;margin:-1.5rem 0 0 -1.5rem;font-size:2rem;color:rgba(255,217,138,.45);transition:color .4s,transform .4s,text-shadow .4s}
+.star:hover{transform:scale(1.2)}
+.star.lit{color:var(--gold);text-shadow:0 0 18px var(--gold);transform:scale(1.25)}
+#reason{min-height:5.5rem;font-family:var(--serif);font-style:italic;font-size:1.5rem;line-height:1.3;color:#fff}
+.tiny{position:relative;height:13rem}
+.tiny .star{left:50%;top:50%;font-size:1.3rem}
+.tiny .star.lit{font-size:3.6rem;transform:scale(1)}
+.env{align-self:center;font-size:5rem;filter:drop-shadow(0 0 14px rgba(244,166,184,.5));transition:transform .3s}
+.env:hover{transform:rotate(-6deg) scale(1.08)}
+.letter{background:var(--mist);color:#2a2140;border-radius:1rem;padding:1.5rem;font-family:var(--serif);font-size:1.3rem;line-height:1.45;display:grid;gap:.9rem}
+.letter b{font-weight:600;font-size:1.5rem}
+.heart{position:fixed;z-index:5;pointer-events:none;color:var(--rose);animation:rise 2.2s ease-out forwards}
+@keyframes rise{from{opacity:1;transform:translateY(0) scale(.6)}to{opacity:0;transform:translateY(-220px) scale(1.4)}}
+@media (prefers-reduced-motion:reduce){#stage{transition:none}.heart{animation-duration:.01s}*{transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<div id="app">
+  <svg id="constellation" viewBox="0 0 300 84" aria-hidden="true"></svg>
+  <main id="stage"></main>
+</div>
+<script>
+// ——— Personalizează aici ———
+var FROM = "Al tău, Sebi";
+var REASONS = [
+  "Iubirea adevărată nu face zgomot. Se vede în lucrurile mici pe care le faci zi de zi, și eu le văd pe toate.",
+  "Iubirea are de oferit casă, liniște și curaj. Tu chiar le-ai adus pe toate trei în viața Tianei.",
+  "Ce mamă uimitoare ai fost din prima clipă: blândă când Tiana a avut nevoie de blândețe, puternică când a trebuit să fii.",
+  "Sunt atât de mândru de tine, Iulia. De fiecare dată când te văd cu Tiana în brațe, mă uimești din nou.",
+  "Ce noroc are Tiana că tu ești mama ei! Va crește știind ce înseamnă să fii iubită fără condiții.",
+  "Tot ce va deveni ea cândva se va naște din ce învață acum de la tine: bunătatea, răbdarea, curajul.",
+  "Nopțile nedormite, grijile, oboseala: le-ai purtat pe toate cu o dragoste pe care nu știu cum s-o descriu.",
+  "Dacă iubirea ar avea un chip, ar semăna cu al tău atunci când o privești pe Tiana adormind."
+];
+var LETTER = [
+  "<b>Iulia,</b>",
+  "Îmi pare rău că nu ți-o spun atât de des cât meriți. Adevărul e că, de multe ori, sunt atât de copleșit de emoții încât nu găsesc cuvintele potrivite.",
+  "Dar vreau să știi un lucru: ești o mamă minunată. Văd cum ai grijă de Tiana, cum o aperi, cum o iubești, și de fiecare dată mă face mândru că tu ești mama ei și că facem asta împreună.",
+  "Tiana e cel mai norocos copil din lume. Iar eu sunt cel mai norocos om, pentru că vă am pe amândouă.",
+  "Mulțumesc pentru tot, I really appreciate you!",
+  FROM
+];
+// ————————————————————————
+
+var stage = document.getElementById('stage');
+var svg = document.getElementById('constellation');
+var NS = 'http://www.w3.org/2000/svg';
+var pts = [[20,60],[70,30],[120,50],[170,20],[225,45],[275,25]];
+var STEPS = 5, step = 0;
+
+pts.forEach(function (p, i) {
+  if (i) { var l = document.createElementNS(NS, 'line');
+    l.setAttribute('x1', pts[i-1][0]); l.setAttribute('y1', pts[i-1][1]);
+    l.setAttribute('x2', p[0]); l.setAttribute('y2', p[1]); svg.appendChild(l); }
+});
+pts.forEach(function (p, i) {
+  var c = document.createElementNS(NS, 'circle');
+  c.setAttribute('cx', p[0]); c.setAttribute('cy', p[1]);
+  c.setAttribute('r', i === pts.length - 1 ? 6 : 4); svg.appendChild(c);
+});
+function light(n) {
+  var cs = svg.querySelectorAll('circle');
+  for (var i = 0; i < cs.length; i++) cs[i].classList.toggle('on', i < n);
+}
+function el(tag, cls, html) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html) e.innerHTML = html;
+  return e;
+}
+function hearts(x, y, n) {
+  for (var i = 0; i < n; i++) {
+    var h = el('span', 'heart', '♥');
+    h.style.left = (x + (Math.random() - .5) * 120) + 'px';
+    h.style.top = (y + (Math.random() - .5) * 40) + 'px';
+    h.style.fontSize = (14 + Math.random() * 20) + 'px';
+    document.body.appendChild(h);
+    setTimeout(function (n) { return function () { n.remove(); }; }(h), 2300);
+  }
+}
+function next() { step++; show(); }
+
+// puncte pe conturul unei inimi (în procente)
+function heartPos(n) {
+  var a = [];
+  for (var i = 0; i < n; i++) {
+    var t = i * 2 * Math.PI / n,
+        x = 16 * Math.pow(Math.sin(t), 3),
+        y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+    a.push([+(50 + x * 2.7).toFixed(1), +(50 - (y + 2.5) * 2.6).toFixed(1)]);
+  }
+  return a;
+}
+
+var scenes = [
+  function () {
+    stage.appendChild(el('h1', '', 'Pentru Iulia'));
+    stage.appendChild(el('p', '', 'O poveste mică, scrisă de Sebi pentru tine.'));
+    var b = el('button', 'go', 'Începe povestea'); b.onclick = next; stage.appendChild(b);
+  },
+  function () {
+    stage.appendChild(el('h2', '', 'A fost odată o noapte obișnuită, in care voiam sa ma uit la un film de groaza...'));
+    stage.appendChild(el('p', '', 'Nimic nu părea special în seara în care viața mea a început să se încruciseze foarte crazy cu a ta. De-mi trecea prin cap vreo secunda ca o sa fim impreuna legit, iar mai târziu o sa avem real copilul nostru, bucatica noastra de om... Tiana, și că nimic nu va mai fi la fel. Cele mai importante lucruri încep adesea fără zgomot (ala vine mai tarziu, dupa vreo luna de relatie), ca o stea care se aprinde încet.'));
+    var b = el('button', 'go', 'Mai departe'); b.onclick = next; stage.appendChild(b);
+  },
+  function () {
+    stage.appendChild(el('h2', '', 'Ce are iubirea de oferit'));
+    stage.appendChild(el('p', 'hint', 'Atinge fiecare stea.'));
+    var f = el('div', 'field'), r = el('p'), b = el('button', 'go', 'Mai departe'), lit = 0;
+    r.id = 'reason'; b.hidden = true; b.onclick = next;
+    var ol = document.createElementNS(NS, 'svg'), pg = document.createElementNS(NS, 'polygon');
+    ol.setAttribute('viewBox', '0 0 100 100'); ol.setAttribute('preserveAspectRatio', 'none'); ol.setAttribute('class', 'outline');
+    pg.setAttribute('points', heartPos(80).map(function (q) { return q[0] + ',' + q[1]; }).join(' '));
+    ol.appendChild(pg); f.appendChild(ol);
+    heartPos(REASONS.length).forEach(function (pos, i) {
+      var s = el('button', 'star', '★');
+      s.setAttribute('aria-label', 'Steaua ' + (i + 1));
+      s.style.left = pos[0] + '%'; s.style.top = pos[1] + '%';
+      s.onclick = function (e) {
+        r.textContent = REASONS[i];
+        if (!s.classList.contains('lit')) { s.classList.add('lit'); lit++; }
+        hearts(e.clientX, e.clientY, 4);
+        if (lit === REASONS.length) { b.hidden = false; ol.classList.add('on'); }
+      };
+      f.appendChild(s);
+    });
+    stage.appendChild(f); stage.appendChild(r); stage.appendChild(b);
+  },
+  function () {
+    stage.appendChild(el('h2', '', 'Și apoi a venit Tiana'));
+    var p = el('p', 'hint', 'Atinge steaua cea mică.');
+    var t = el('div', 'tiny'), s = el('button', 'star', '★');
+    var b = el('button', 'go', 'Mai departe'); b.hidden = true; b.onclick = next;
+    s.setAttribute('aria-label', 'Steaua Tianei');
+    s.onclick = function (e) {
+      s.classList.add('lit');
+      p.className = ''; p.textContent = 'Tiana a venit și a luminat cel mai întunecat colț al cerului. Iar lumina ei seamănă atât de mult cu a ta. Te-am văzut devenind mamă, și a fost cel mai frumos lucru pe care l-am văzut vreodată.';
+      hearts(e.clientX, e.clientY, 10); b.hidden = false;
+    };
+    t.appendChild(s);
+    stage.appendChild(t); stage.appendChild(p); stage.appendChild(b);
+  },
+  function () {
+    stage.appendChild(el('h2', '', 'O scrisoare pentru tine'));
+    var p = el('p', 'hint', 'Deschide plicul.');
+    var e = el('button', 'env', '💌'); e.setAttribute('aria-label', 'Deschide scrisoarea');
+    e.onclick = function (ev) {
+      var L = el('div', 'letter');
+      LETTER.forEach(function (t) { L.appendChild(el('span', '', t)); });
+      e.replaceWith(L); p.remove(); light(6);
+      hearts(ev.clientX, ev.clientY, 24);
+      var b = el('button', 'go', 'Citește din nou'); b.onclick = function () { step = 0; show(); };
+      stage.appendChild(b);
+    };
+    stage.appendChild(e); stage.appendChild(p);
+  }
+];
+
+function show() {
+  stage.classList.remove('in');
+  setTimeout(function () {
+    stage.innerHTML = '';
+    scenes[step]();
+    light(Math.min(step, 5));
+    stage.classList.add('in');
+    window.scrollTo(0, 0);
+  }, 350);
+}
+
+// cer cu stele
+var cv = document.getElementById('sky'), cx = cv.getContext('2d'), stars = [];
+var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function size() {
+  cv.width = innerWidth; cv.height = innerHeight; stars = [];
+  for (var i = 0; i < 110; i++) stars.push({ x: Math.random() * cv.width, y: Math.random() * cv.height, r: Math.random() * 1.4 + .3, p: Math.random() * 6 });
+}
+function draw(t) {
+  cx.clearRect(0, 0, cv.width, cv.height);
+  stars.forEach(function (s) {
+    cx.globalAlpha = .35 + .35 * Math.sin(t / 900 + s.p);
+    cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(s.x, s.y, s.r, 0, 7); cx.fill();
+  });
+  if (!still) requestAnimationFrame(draw);
+}
+addEventListener('resize', function () { size(); if (still) draw(0); });
+size(); draw(0);
+show();
+</script>
+</body>
+</html>
